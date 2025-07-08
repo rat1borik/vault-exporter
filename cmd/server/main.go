@@ -1,42 +1,39 @@
 package main
 
 import (
-	"context"
-	"net/http"
+	"log"
 	"os"
-	"os/signal"
-	"syscall"
-	"time"
-	"vault-exporter/internal/router"
+
+	"github.com/kardianos/service"
 )
 
+var AppEnv string
+
 func main() {
-	r := router.SetupRouter()
-
-	srv := &http.Server{
-		Addr:    ":8080",
-		Handler: r,
+	svcConfig := &service.Config{
+		Name:        "VaultExporterService",
+		DisplayName: "Vault Exporter Service",
+		Description: "A tool for exporting data from Vault to KS",
 	}
 
-	go runServer(srv)
-
-	// Создаем канал для перехвата сигналов OS
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-
-	// Создаем контекст с таймаутом для graceful shutdown
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	// Попытка корректно завершить работу сервера
-	if err := srv.Shutdown(ctx); err != nil {
-		panic(err)
+	prg := &program{isProd: AppEnv == "production"}
+	s, err := service.New(prg, svcConfig)
+	if err != nil {
+		log.Fatal(err)
 	}
-}
 
-func runServer(srv *http.Server) {
-	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		panic(err)
+	// Если запустили с параметром install/uninstall/start/stop
+	if len(os.Args) > 1 {
+		err = service.Control(s, os.Args[1])
+		if err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
+
+	// Запуск сервиса
+	err = s.Run()
+	if err != nil {
+		log.Fatal(err)
 	}
 }
