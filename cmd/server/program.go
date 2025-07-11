@@ -6,10 +6,11 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"vault-exporter/internal/config"
 	"vault-exporter/internal/router"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kardianos/service"
+	svc "github.com/kardianos/service"
 )
 
 type program struct {
@@ -18,10 +19,10 @@ type program struct {
 	isProd bool
 }
 
-func (p *program) Start(s service.Service) error {
+func (p *program) Start(s svc.Service) error {
 
 	// Загрузка конфигурации
-	cfg, err := LoadConfig("config.yaml")
+	cfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 		return err
@@ -34,7 +35,7 @@ func (p *program) Start(s service.Service) error {
 		log.Println("Starting in development mode")
 
 	}
-	r := router.SetupRouter()
+	r := router.SetupRouter(cfg)
 
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 
@@ -55,7 +56,7 @@ func (p *program) Start(s service.Service) error {
 	return nil
 }
 
-func (p *program) Stop(s service.Service) error {
+func (p *program) Stop(s svc.Service) error {
 	log.Println("Stopping HTTP server...")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
