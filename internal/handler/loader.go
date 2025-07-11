@@ -1,3 +1,4 @@
+// Package handler содержит обработчики ручек.
 package handler
 
 import (

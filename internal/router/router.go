@@ -1,3 +1,4 @@
+// Package router содержит маршруты gin
 package router
 
 import (

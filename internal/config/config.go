@@ -1,3 +1,4 @@
+// Package config описывает конфигурацию приложения.
 package config
 
 type ServerConfig struct {
