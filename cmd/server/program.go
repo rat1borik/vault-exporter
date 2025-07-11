@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -13,21 +14,37 @@ import (
 
 type program struct {
 	server *http.Server
+	// config *config.ServerConfig
 	isProd bool
 }
 
 func (p *program) Start(s service.Service) error {
+
+	// Загрузка конфигурации
+	cfg, err := LoadConfig("config.yaml")
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+		return err
+	}
+
+	// Определяем environment
 	if p.isProd {
 		gin.SetMode(gin.ReleaseMode)
 	} else {
 		log.Println("Starting in development mode")
+
 	}
 	r := router.SetupRouter()
 
+	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
+
 	p.server = &http.Server{
-		Addr:    ":8080",
+		Addr:    addr,
 		Handler: r,
 	}
+
+	log.Printf("HTTP server on %s", addr)
+
 	// Запуск в отдельной горутине
 	go func() {
 		if err := p.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
