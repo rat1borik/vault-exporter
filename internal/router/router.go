@@ -2,7 +2,6 @@
 package router
 
 import (
-	"database/sql"
 	"net/http"
 	"vault-exporter/internal/config"
 	"vault-exporter/internal/handler"
@@ -10,9 +9,10 @@ import (
 	"vault-exporter/internal/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func SetupServer(cfg *config.ServerConfig, db *sql.DB) *gin.Engine {
+func SetupServer(cfg *config.ServerConfig, db *pgxpool.Pool) *gin.Engine {
 	r := gin.Default()
 
 	ksRepo := repository.NewKSRepository(db)

@@ -35,10 +35,16 @@ func (h *LoadVaultHandler) LoadVaultData(c *gin.Context) {
 	if err := c.ShouldBindBodyWithJSON(&items); err != nil {
 		log.Printf("%v", err.Error())
 		response.ValidationError(c, []string{"Ошибка при обработке входных данных"})
+		return
 	}
 
 	if err := h.importProcSvc.Import(items); err != nil {
-		response.ServerError(c, []string{})
+		msgs := make([]string, len(err))
+		for i := range err {
+			msgs = append(msgs, err[i].Error())
+		}
+		response.ServerError(c, msgs)
+		return
 	}
 
 	response.Success(c)

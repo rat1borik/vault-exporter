@@ -16,8 +16,9 @@ const (
 
 func DefSpecDivision(val string) (SpecDivision, error) {
 	specDivisionMap := map[string]SpecDivision{
-		"Part":     Part,
-		"Assembly": Assembly,
+		"Part":      Part,
+		"Assembly":  Assembly,
+		"Purchased": Another,
 	}
 
 	if res, ok := specDivisionMap[val]; ok {

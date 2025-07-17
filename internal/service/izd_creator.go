@@ -2,15 +2,17 @@
 package service
 
 import (
-	"database/sql"
 	"fmt"
 	"vault-exporter/internal/config"
 	"vault-exporter/internal/domain"
 	"vault-exporter/internal/repository"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type IzdCreatorService interface {
-	CreateIzd(item *domain.VaultItem, tx *sql.Tx) (int64, error)
+	CreateIzd(item *domain.VaultItem, tx pgx.Tx) (int64, error)
+	AddToAssembly(data *AddToAssemblyDTO, tx pgx.Tx) error
 }
 
 type izdCreatorService struct {
@@ -22,7 +24,7 @@ func NewIzdCreatorService(cfg *config.ServerConfig, repo repository.KSRepository
 	return &izdCreatorService{cfg: cfg, repo: repo}
 }
 
-func (svc *izdCreatorService) CreateIzd(item *domain.VaultItem, tx *sql.Tx) (int64, error) {
+func (svc *izdCreatorService) CreateIzd(item *domain.VaultItem, tx pgx.Tx) (int64, error) {
 	spec, err := domain.DefSpecDivision(item.CatSystemName)
 	if err != nil {
 		return 0, fmt.Errorf("can't define spec izd: %w", err)
@@ -61,4 +63,15 @@ func propertiesMap(val []domain.VaultProperty) map[int]interface{} {
 	}
 
 	return res
+}
+
+func (svc *izdCreatorService) AddToAssembly(data *AddToAssemblyDTO, tx pgx.Tx) error {
+	// TODO: какие-то валидации и проч. вещи
+	return svc.repo.AddToAssembly(&repository.AddToAssemblyRepoDTO{
+		ParentId: data.ParentId,
+		Id:       data.Id,
+		Quantity: data.Quantity,
+		Position: data.Position,
+	}, tx)
+
 }

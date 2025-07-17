@@ -19,4 +19,14 @@ const IdRazrab int64 = 13004684
 const IdRazrabKD int64 = 130000583353 // Разраб для всего
 
 const IdGrown int64 = 768354 // Организация под все нужды
-const IdClsIzd int32 = 10    // Класс ИЗД
+const IdClsIzd int64 = 10    // Класс ИЗД
+
+const IdYes int64 = 591669
+const IdNo int64 = 591671
+
+type AddToAssemblyRepoDTO struct {
+	ParentId int64
+	Id       int64
+	Quantity int
+	Position int
+}
