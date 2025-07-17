@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,7 +16,6 @@ import (
 
 type program struct {
 	server *http.Server
-	// config *config.ServerConfig
 	isProd bool
 }
 
@@ -28,6 +28,19 @@ func (p *program) Start(s svc.Service) error {
 		return err
 	}
 
+	// Запускаем коннект с базой
+	db, err := sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
+		cfg.KSDatabase.User,
+		cfg.KSDatabase.Password,
+		cfg.KSDatabase.Host,
+		cfg.KSDatabase.Port,
+		cfg.KSDatabase.Name))
+
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
 	// Определяем environment
 	if p.isProd {
 		gin.SetMode(gin.ReleaseMode)
@@ -35,7 +48,7 @@ func (p *program) Start(s svc.Service) error {
 		log.Println("Starting in development mode")
 
 	}
-	r := router.SetupRouter(cfg)
+	r := router.SetupServer(cfg, db)
 
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 

@@ -2,24 +2,27 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
-	"time"
+	"sync"
 	"vault-exporter/internal/config"
 	"vault-exporter/internal/model"
 	"vault-exporter/internal/utils"
 )
 
 type FileGetterService interface {
-	LoadFile(ctx context.Context, file *model.VaultFile) (string, error)
+	LoadFile(*model.VaultFile, string) (string, error)
+	ClearTempFolder(string) error
+	CommitFiles(string) error
+	EnsureUnique(string) bool
 }
 
 type fileGetterService struct {
-	cfg *config.ServerConfig
+	cfg      *config.ServerConfig
+	commitMu *sync.Mutex
 }
 
 func NewFileGetterService(cfg *config.ServerConfig) FileGetterService {
@@ -27,7 +30,7 @@ func NewFileGetterService(cfg *config.ServerConfig) FileGetterService {
 }
 
 // Осуществляет загрузку файла из Vault в специальную директорию КС
-func (srv *fileGetterService) LoadFile(ctx context.Context, file *model.VaultFile) (string, error) {
+func (srv *fileGetterService) LoadFile(file *model.VaultFile, ctxId string) (string, error) {
 
 	path := fmt.Sprintf("http://%s:%d/api/files?id=%d", srv.cfg.Vault.Host, srv.cfg.Vault.Port, file.Id)
 
@@ -37,19 +40,9 @@ func (srv *fileGetterService) LoadFile(ctx context.Context, file *model.VaultFil
 	}
 	defer resp.Body.Close()
 
-	fileName := file.FileName
-
-	// Добиваемся уникальности
-	if utils.FileExists(filepath.Join(srv.cfg.KSFilesPath, fileName)) {
-		fileName = fmt.Sprintf("%s - %d", fileName, file.VerNum)
-
-		if utils.FileExists(filepath.Join(srv.cfg.KSFilesPath, fileName)) {
-			fileName = fmt.Sprintf("%s - %s", file.FileName, time.Now().Format("02.01.2006 15:04"))
-		}
-	}
-
 	// Пишем во временное место (потом заберем)
-	dest, err := os.Create(filepath.Join(srv.cfg.TempPath, fileName))
+	utils.EnsureDir(srv.tempDirPath(ctxId))
+	dest, err := os.Create(filepath.Join(srv.tempDirPath(ctxId), file.FileName))
 	if err != nil {
 		return "", fmt.Errorf("сan't create file: %w, id = %d", err, file.Id)
 	}
@@ -59,5 +52,46 @@ func (srv *fileGetterService) LoadFile(ctx context.Context, file *model.VaultFil
 		return "", fmt.Errorf("сan't write file: %w, id = %d", err, file.Id)
 	}
 
-	return fileName, nil
+	return file.FileName, nil
+}
+
+func (srv *fileGetterService) tempDirPath(ctxId string) string {
+	return filepath.Join(srv.cfg.TempPath, ctxId)
+}
+
+// Чистит временнную папку в случае неудачи / после всех действий
+func (srv *fileGetterService) ClearTempFolder(ctxId string) error {
+	err := utils.ClearDir(srv.tempDirPath(ctxId), true)
+	if err != nil {
+		return fmt.Errorf("can't clear temp dir: %w", err)
+	}
+
+	return nil
+}
+
+// Заливает файлы в финальную папку КС
+func (srv *fileGetterService) CommitFiles(ctxId string) error {
+	// Блокируемся, чтобы не было коллизий между двумя коммитами
+	srv.commitMu.Lock()
+	defer srv.commitMu.Unlock()
+
+	entries, err := os.ReadDir(srv.tempDirPath(ctxId))
+	if err != nil {
+		return fmt.Errorf("can't commit files: %w", err)
+	}
+
+	for _, e := range entries {
+		//TODO: проверка на уникальность
+
+		utils.CopyFile(filepath.Join(srv.tempDirPath(ctxId), e.Name()), filepath.Join(srv.cfg.KSFilesPath, e.Name()), false)
+	}
+
+	srv.ClearTempFolder(ctxId)
+
+	return nil
+}
+
+// Проверяет нет ли коллизий по данному ctxId (должен вызываться в самом начале )
+func (srv *fileGetterService) EnsureUnique(ctxId string) bool {
+	return !utils.DirExists(srv.tempDirPath(ctxId))
 }

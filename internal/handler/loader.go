@@ -13,12 +13,14 @@ import (
 
 type LoadVaultHandler struct {
 	fileGetterSvc service.FileGetterService
+	izdCreatorSvc service.IzdCreatorService
 	cfg           *config.ServerConfig
 }
 
-func NewLoadVaultHandler(fileGetterSvc service.FileGetterService, cfg *config.ServerConfig) *LoadVaultHandler {
+func NewLoadVaultHandler(fileGetterSvc service.FileGetterService, izdCreatorService service.IzdCreatorService, cfg *config.ServerConfig) *LoadVaultHandler {
 	return &LoadVaultHandler{
 		fileGetterSvc: fileGetterSvc,
+		izdCreatorSvc: izdCreatorService,
 		cfg:           cfg,
 	}
 }

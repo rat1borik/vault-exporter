@@ -20,6 +20,13 @@ type ServerConfig struct {
 	} `yaml:"vault"`
 	KSFilesPath string `yaml:"ks_files_path"`
 	TempPath    string `yaml:"temp_path"`
+	KSDatabase  struct {
+		Host     string `yaml:"host"`
+		Port     int    `yaml:"port"`
+		User     string `yaml:"user"`
+		Name     string `yaml:"name"`
+		Password string `yaml:"password"`
+	} `yaml:"ksDatabase"`
 }
 
 func LoadConfig(filename string) (*ServerConfig, error) {
