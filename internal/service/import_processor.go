@@ -13,7 +13,7 @@ import (
 
 // Оркестрирует полный процесс импорта
 type ImportProcessorService interface {
-	Import([]domain.VaultItem) []error
+	Import(context.Context, []domain.VaultItem) []error
 }
 
 type importProcessorService struct {
@@ -33,7 +33,7 @@ func NewImportProcessorService(cfg *config.ServerConfig, db *pgxpool.Pool, fileG
 		izdCreatorSvc: izdCreatorService}
 }
 
-func (svc importProcessorService) Import(val []domain.VaultItem) []error {
+func (svc importProcessorService) Import(ctx context.Context, val []domain.VaultItem) []error {
 	if len(val) == 0 {
 		return nil
 	}
@@ -67,7 +67,7 @@ func (svc importProcessorService) Import(val []domain.VaultItem) []error {
 
 		created[node.Id] = struct{}{}
 
-		idParent, err := svc.izdCreatorSvc.CreateIzd(node, tx)
+		idParent, err := svc.izdCreatorSvc.CreateIzd(ctx, node, tx)
 		if err != nil {
 			errs = append(errs, err)
 			return nil
@@ -88,7 +88,7 @@ func (svc importProcessorService) Import(val []domain.VaultItem) []error {
 					continue
 
 				}
-				err = svc.izdCreatorSvc.AddToAssembly(&AddToAssemblyDTO{
+				err = svc.izdCreatorSvc.AddToAssembly(ctx, &AddToAssemblyDTO{
 					ParentId: idParent,
 					Id:       *id,
 					Quantity: int(*val[i].Quant),

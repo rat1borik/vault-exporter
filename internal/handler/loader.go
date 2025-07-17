@@ -38,7 +38,7 @@ func (h *LoadVaultHandler) LoadVaultData(c *gin.Context) {
 		return
 	}
 
-	if err := h.importProcSvc.Import(items); err != nil {
+	if err := h.importProcSvc.Import(c, items); err != nil {
 		msgs := make([]string, len(err))
 		for i := range err {
 			msgs = append(msgs, err[i].Error())

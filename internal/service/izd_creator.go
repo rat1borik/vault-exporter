@@ -2,6 +2,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"vault-exporter/internal/config"
 	"vault-exporter/internal/domain"
@@ -11,8 +12,8 @@ import (
 )
 
 type IzdCreatorService interface {
-	CreateIzd(item *domain.VaultItem, tx pgx.Tx) (int64, error)
-	AddToAssembly(data *AddToAssemblyDTO, tx pgx.Tx) error
+	CreateIzd(ctx context.Context, item *domain.VaultItem, tx pgx.Tx) (int64, error)
+	AddToAssembly(ctx context.Context, data *AddToAssemblyDTO, tx pgx.Tx) error
 }
 
 type izdCreatorService struct {
@@ -24,7 +25,7 @@ func NewIzdCreatorService(cfg *config.ServerConfig, repo repository.KSRepository
 	return &izdCreatorService{cfg: cfg, repo: repo}
 }
 
-func (svc *izdCreatorService) CreateIzd(item *domain.VaultItem, tx pgx.Tx) (int64, error) {
+func (svc *izdCreatorService) CreateIzd(ctx context.Context, item *domain.VaultItem, tx pgx.Tx) (int64, error) {
 	spec, err := domain.DefSpecDivision(item.CatSystemName)
 	if err != nil {
 		return 0, fmt.Errorf("can't define spec izd: %w", err)
@@ -47,7 +48,7 @@ func (svc *izdCreatorService) CreateIzd(item *domain.VaultItem, tx pgx.Tx) (int6
 		Weight:         props[122].(float64),
 	}
 
-	id, err := svc.repo.CreateIzd(opts, tx)
+	id, err := svc.repo.CreateIzd(ctx, opts, tx)
 	if err != nil {
 		return 0, err
 	}
@@ -65,9 +66,9 @@ func propertiesMap(val []domain.VaultProperty) map[int]interface{} {
 	return res
 }
 
-func (svc *izdCreatorService) AddToAssembly(data *AddToAssemblyDTO, tx pgx.Tx) error {
+func (svc *izdCreatorService) AddToAssembly(ctx context.Context, data *AddToAssemblyDTO, tx pgx.Tx) error {
 	// TODO: какие-то валидации и проч. вещи
-	return svc.repo.AddToAssembly(&repository.AddToAssemblyRepoDTO{
+	return svc.repo.AddToAssembly(ctx, &repository.AddToAssemblyRepoDTO{
 		ParentId: data.ParentId,
 		Id:       data.Id,
 		Quantity: data.Quantity,
