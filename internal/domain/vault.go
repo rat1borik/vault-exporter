@@ -1,5 +1,5 @@
-// Package model содержит модели доменной области
-package model
+// Package domain содержит модели доменной области и доменную логику
+package domain
 
 import "time"
 
@@ -32,9 +32,10 @@ type VaultItem struct {
 }
 
 type VaultProperty struct {
-	SysName  string      `json:"SysName"`
-	DispName string      `json:"DispName"`
-	Val      interface{} `json:"Val"`
+	PropDefId int         `json:"PropDefId"`
+	SysName   string      `json:"SysName"`
+	DispName  string      `json:"DispName"`
+	Val       interface{} `json:"Val"`
 }
 
 type VaultFile struct {

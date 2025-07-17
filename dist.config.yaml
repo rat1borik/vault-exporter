@@ -1,0 +1,14 @@
+server:
+  host: "0.0.0.0"
+  port: 4322
+vault:
+  host: "192.168.88.1"
+  port: 5555
+ks_files_path: "c:/ks/ks-src/M"
+temp_path: "c:/ks/temp"
+ks_database:
+  host: "127.0.0.1"
+  port: 54321
+  user: "postgres"
+  name: "TPS"
+  password: "pass"

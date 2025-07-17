@@ -20,9 +20,10 @@ func SetupServer(cfg *config.ServerConfig, db *sql.DB) *gin.Engine {
 	// Регистрируем все зависимости
 
 	fileGetterService := service.NewFileGetterService(cfg)
-	izdCreatorService := service.NewIzdCreatorService(cfg, &ksRepo)
+	izdCreatorService := service.NewIzdCreatorService(cfg, ksRepo)
+	importProcessorService := service.NewImportProcessorService(cfg, db, fileGetterService, izdCreatorService, ksRepo)
 
-	fgHandler := handler.NewLoadVaultHandler(fileGetterService, izdCreatorService, cfg)
+	fgHandler := handler.NewLoadVaultHandler(cfg, importProcessorService)
 
 	api := r.Group("/api")
 	{

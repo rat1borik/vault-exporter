@@ -2,25 +2,63 @@
 package service
 
 import (
+	"database/sql"
+	"fmt"
 	"vault-exporter/internal/config"
-	"vault-exporter/internal/model"
+	"vault-exporter/internal/domain"
 	"vault-exporter/internal/repository"
 )
 
 type IzdCreatorService interface {
-	CreateIzd(item *model.VaultItem) (int64, error)
+	CreateIzd(item *domain.VaultItem, tx *sql.Tx) (int64, error)
 }
 
 type izdCreatorService struct {
 	cfg  *config.ServerConfig
-	repo *repository.KSRepository
+	repo repository.KSRepository
 }
 
-func NewIzdCreatorService(cfg *config.ServerConfig, repo *repository.KSRepository) IzdCreatorService {
+func NewIzdCreatorService(cfg *config.ServerConfig, repo repository.KSRepository) IzdCreatorService {
 	return &izdCreatorService{cfg: cfg, repo: repo}
 }
 
-func (svc *izdCreatorService) CreateIzd(item *model.VaultItem) (int64, error) {
+func (svc *izdCreatorService) CreateIzd(item *domain.VaultItem, tx *sql.Tx) (int64, error) {
+	spec, err := domain.DefSpecDivision(item.CatSystemName)
+	if err != nil {
+		return 0, fmt.Errorf("can't define spec izd: %w", err)
+	}
 
-	return 0, nil
+	unit, err := domain.DefUnit(*item.UnitID)
+	if err != nil {
+		return 0, fmt.Errorf("can't define unit izd: %w", err)
+	}
+
+	props := propertiesMap(item.Properties)
+
+	opts := &repository.IzdCreationOptions{
+		Code:           item.PartNumber,
+		Name:           item.Title,
+		CodeName:       item.Title,
+		SpecDivisionId: spec,
+		UnitsId:        unit,
+		GroupId:        domain.MK,
+		Weight:         props[122].(float64),
+	}
+
+	id, err := svc.repo.CreateIzd(opts, tx)
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
+}
+
+func propertiesMap(val []domain.VaultProperty) map[int]interface{} {
+	res := make(map[int]interface{}, len(val))
+
+	for _, v := range val {
+		res[v.PropDefId] = v.Val
+	}
+
+	return res
 }

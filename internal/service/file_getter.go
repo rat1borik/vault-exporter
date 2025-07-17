@@ -9,12 +9,12 @@ import (
 	"path/filepath"
 	"sync"
 	"vault-exporter/internal/config"
-	"vault-exporter/internal/model"
+	"vault-exporter/internal/domain"
 	"vault-exporter/internal/utils"
 )
 
 type FileGetterService interface {
-	LoadFile(*model.VaultFile, string) (string, error)
+	LoadFile(*domain.VaultFile, string) (string, error)
 	ClearTempFolder(string) error
 	CommitFiles(string) error
 	EnsureUnique(string) bool
@@ -30,7 +30,7 @@ func NewFileGetterService(cfg *config.ServerConfig) FileGetterService {
 }
 
 // Осуществляет загрузку файла из Vault в специальную директорию КС
-func (srv *fileGetterService) LoadFile(file *model.VaultFile, ctxId string) (string, error) {
+func (srv *fileGetterService) LoadFile(file *domain.VaultFile, ctxId string) (string, error) {
 
 	path := fmt.Sprintf("http://%s:%d/api/files?id=%d", srv.cfg.Vault.Host, srv.cfg.Vault.Port, file.Id)
 

@@ -26,7 +26,7 @@ type ServerConfig struct {
 		User     string `yaml:"user"`
 		Name     string `yaml:"name"`
 		Password string `yaml:"password"`
-	} `yaml:"ksDatabase"`
+	} `yaml:"ks_database"`
 }
 
 func LoadConfig(filename string) (*ServerConfig, error) {

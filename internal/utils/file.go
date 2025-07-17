@@ -51,7 +51,7 @@ func ClearDir(path string, self bool) error {
 	}
 
 	if self {
-		os.Remove(path)
+		err := os.Remove(path)
 		if err != nil {
 			return fmt.Errorf("can't remove %s: %w", path, err)
 		}

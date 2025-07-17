@@ -4,7 +4,7 @@ package handler
 import (
 	"log"
 	"vault-exporter/internal/config"
-	"vault-exporter/internal/model"
+	"vault-exporter/internal/domain"
 	"vault-exporter/internal/response"
 	"vault-exporter/internal/service"
 
@@ -12,15 +12,13 @@ import (
 )
 
 type LoadVaultHandler struct {
-	fileGetterSvc service.FileGetterService
-	izdCreatorSvc service.IzdCreatorService
+	importProcSvc service.ImportProcessorService
 	cfg           *config.ServerConfig
 }
 
-func NewLoadVaultHandler(fileGetterSvc service.FileGetterService, izdCreatorService service.IzdCreatorService, cfg *config.ServerConfig) *LoadVaultHandler {
+func NewLoadVaultHandler(cfg *config.ServerConfig, importProcSvc service.ImportProcessorService) *LoadVaultHandler {
 	return &LoadVaultHandler{
-		fileGetterSvc: fileGetterSvc,
-		izdCreatorSvc: izdCreatorService,
+		importProcSvc: importProcSvc,
 		cfg:           cfg,
 	}
 }
@@ -32,11 +30,15 @@ func (h *LoadVaultHandler) RegisterRoute(r *gin.RouterGroup) {
 // Загружает данные при вызове ручки из Vault
 func (h *LoadVaultHandler) LoadVaultData(c *gin.Context) {
 
-	var items []model.VaultItem
+	var items []domain.VaultItem
 
 	if err := c.ShouldBindBodyWithJSON(&items); err != nil {
 		log.Printf("%v", err.Error())
 		response.ValidationError(c, []string{"Ошибка при обработке входных данных"})
+	}
+
+	if err := h.importProcSvc.Import(items); err != nil {
+		response.ServerError(c, []string{})
 	}
 
 	response.Success(c)
