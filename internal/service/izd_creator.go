@@ -26,9 +26,11 @@ func NewIzdCreatorService(cfg *config.ServerConfig, repo repository.KSRepository
 }
 
 func (svc *izdCreatorService) CreateIzd(ctx context.Context, item *domain.VaultItem, tx pgx.Tx) (int64, error) {
-	spec, err := domain.DefSpecDivision(item.CatSystemName)
-	if err != nil {
-		return 0, fmt.Errorf("can't define spec izd: %w", err)
+	spec := domain.DefSpecDivision(item.CatSystemName)
+
+	// Не производится - нужно найти
+	if spec == domain.Another {
+
 	}
 
 	unit, err := domain.DefUnit(*item.UnitID)

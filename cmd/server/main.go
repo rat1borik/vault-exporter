@@ -36,5 +36,6 @@ func main() {
 	err = s.Run()
 	if err != nil {
 		log.Fatal(err)
+		panic(err)
 	}
 }

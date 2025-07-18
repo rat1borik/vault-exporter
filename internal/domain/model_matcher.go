@@ -2,7 +2,6 @@ package domain
 
 import (
 	"errors"
-	"fmt"
 )
 
 // Разделы спецификаций
@@ -11,21 +10,20 @@ type SpecDivision int64
 const (
 	Assembly SpecDivision = 10000001424 // Сборка
 	Part     SpecDivision = 10000001425 // Деталь
-	Another  SpecDivision = 10000001544
+	Another  SpecDivision = 0
 )
 
-func DefSpecDivision(val string) (SpecDivision, error) {
+func DefSpecDivision(val string) SpecDivision {
 	specDivisionMap := map[string]SpecDivision{
-		"Part":      Part,
-		"Assembly":  Assembly,
-		"Purchased": Another,
+		"Part":     Part,
+		"Assembly": Assembly,
 	}
 
 	if res, ok := specDivisionMap[val]; ok {
-		return res, nil
+		return res
 	}
 
-	return 0, fmt.Errorf("can't define specification division %s", val)
+	return Another
 }
 
 // Единицы измерения

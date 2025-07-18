@@ -9,7 +9,10 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type PgTracer struct{}
+// TODO: сделать для batch и в какую-то общую помойку скидывать
+type PgTracer struct {
+	IsProd bool
+}
 
 type TraceData struct {
 	Command   string
@@ -44,6 +47,8 @@ func (t PgTracer) TraceQueryEnd(
 		return
 	}
 	duration := time.Since(tData.StartTime)
-	fmt.Printf("[PGX TRACE] SQL: %s | Args: %v | Duration: %v | Err: %v\n",
-		tData.Command, tData.Args, duration, data.Err)
+	if !t.IsProd {
+		fmt.Printf("[PGX TRACE] SQL: %s | Args: %v | Duration: %v | Err: %v\n",
+			tData.Command, tData.Args, duration, data.Err)
+	}
 }

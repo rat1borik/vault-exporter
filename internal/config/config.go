@@ -27,6 +27,8 @@ type ServerConfig struct {
 		Name     string `yaml:"name"`
 		Password string `yaml:"password"`
 	} `yaml:"ks_database"`
+	// Берется из env
+	IsProduction bool
 }
 
 func LoadConfig(filename string) (*ServerConfig, error) {

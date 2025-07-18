@@ -31,33 +31,13 @@ func (p *program) Start(s svc.Service) error {
 		return err
 	}
 
-	pgcfg, err := pgxpool.ParseConfig(fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
-		cfg.KSDatabase.User,
-		cfg.KSDatabase.Password,
-		cfg.KSDatabase.Host,
-		cfg.KSDatabase.Port,
-		cfg.KSDatabase.Name))
-	if err != nil {
+	if pool, err := runDb(cfg); err != nil {
 		log.Fatal(err)
+		return err
+	} else {
+		p.db = pool
 	}
 
-	pgcfg.ConnConfig.Tracer = infrastructure.PgTracer{}
-	pgcfg.MaxConnLifetime = time.Hour
-	pgcfg.MaxConns = 10
-	pgcfg.MinIdleConns = 5
-
-	pool, err := pgxpool.NewWithConfig(context.Background(), pgcfg)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	p.db = pool
-
-	if err != nil {
-		panic(err)
-	}
-
-	// Определяем environment
 	if p.isProd {
 		gin.SetMode(gin.ReleaseMode)
 	} else {
@@ -100,4 +80,28 @@ func (p *program) Stop(s svc.Service) error {
 	p.db.Close()
 
 	return err
+}
+
+func runDb(cfg *config.ServerConfig) (*pgxpool.Pool, error) {
+	pgcfg, err := pgxpool.ParseConfig(fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
+		cfg.KSDatabase.User,
+		cfg.KSDatabase.Password,
+		cfg.KSDatabase.Host,
+		cfg.KSDatabase.Port,
+		cfg.KSDatabase.Name))
+	if err != nil {
+		return nil, err
+	}
+
+	pgcfg.ConnConfig.Tracer = infrastructure.PgTracer{IsProd: false}
+	pgcfg.MaxConnLifetime = time.Hour
+	pgcfg.MaxConns = 10
+	pgcfg.MinIdleConns = 5
+
+	pool, err := pgxpool.NewWithConfig(context.Background(), pgcfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return pool, err
 }

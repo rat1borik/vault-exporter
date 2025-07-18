@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"vault-exporter/internal/config"
 	"vault-exporter/internal/domain"
 	"vault-exporter/internal/repository"
+	"vault-exporter/internal/utils"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -38,11 +40,11 @@ func (svc importProcessorService) Import(ctx context.Context, val []domain.Vault
 		return nil
 	}
 
-	tx, err := svc.db.Begin(context.Background())
+	tx, err := svc.db.Begin(ctx)
 	if err != nil {
 		return []error{fmt.Errorf("can't start transaction: %w", err)}
 	}
-	defer tx.Rollback(context.Background())
+	defer tx.Rollback(ctx)
 
 	var root *domain.VaultItem
 
@@ -53,7 +55,7 @@ func (svc importProcessorService) Import(ctx context.Context, val []domain.Vault
 		}
 	}
 
-	errs := make([]error, 0)
+	errs := utils.NewUserErrorCollection()
 
 	created := make(map[int64]struct{}, len(val))
 
@@ -61,7 +63,7 @@ func (svc importProcessorService) Import(ctx context.Context, val []domain.Vault
 	createAndFill = func(node *domain.VaultItem) *int64 {
 		// Проверяем на ацикличность
 		if _, ok := created[node.Id]; ok {
-			errs = append(errs, fmt.Errorf("cycle detected at nodeId = %d", node.Id))
+			errs.Add(utils.UserErrorf("обнаружено зацикливание в узле %s %s", node.Title, node.PartNumber), !svc.cfg.IsProduction)
 			return nil
 		}
 
@@ -69,7 +71,7 @@ func (svc importProcessorService) Import(ctx context.Context, val []domain.Vault
 
 		idParent, err := svc.izdCreatorSvc.CreateIzd(ctx, node, tx)
 		if err != nil {
-			errs = append(errs, err)
+			errs.Add(err, !svc.cfg.IsProduction)
 			return nil
 		}
 
@@ -84,7 +86,7 @@ func (svc importProcessorService) Import(ctx context.Context, val []domain.Vault
 				// Тут добавляем в состав
 				pos, err := strconv.Atoi(*val[i].PositionNum)
 				if err != nil {
-					errs = append(errs, fmt.Errorf("can't define position in assembly, nodeId = %d", val[i].Id))
+					errs.Add(utils.UserErrorf("не удается определить позицию в сборке %s %s", node.Title, node.PartNumber), !svc.cfg.IsProduction)
 					continue
 
 				}
@@ -95,7 +97,11 @@ func (svc importProcessorService) Import(ctx context.Context, val []domain.Vault
 					Position: pos,
 				}, tx)
 				if err != nil {
-					errs = append(errs, err)
+					var dummy *utils.UserError
+					if errors.As(err, &dummy) || !svc.cfg.IsProduction {
+						errs.Add(err, !svc.cfg.IsProduction)
+					}
+
 					continue
 				}
 			}
@@ -106,10 +112,9 @@ func (svc importProcessorService) Import(ctx context.Context, val []domain.Vault
 
 	createAndFill(root)
 
-	if len(errs) != 0 {
-		return errs
+	errsFinal := errs.Collection()
+	if errsFinal != nil {
+		tx.Commit(ctx)
 	}
-
-	tx.Commit(context.Background())
-	return nil
+	return errsFinal
 }

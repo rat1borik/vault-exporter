@@ -30,3 +30,7 @@ type AddToAssemblyRepoDTO struct {
 	Quantity int
 	Position int
 }
+
+type FindNmDTO struct {
+	Name string
+}
