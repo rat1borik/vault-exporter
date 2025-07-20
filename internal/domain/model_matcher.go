@@ -8,9 +8,9 @@ import (
 type SpecDivision int64
 
 const (
-	Assembly SpecDivision = 10000001424 // Сборка
-	Part     SpecDivision = 10000001425 // Деталь
-	Another  SpecDivision = 0
+	Assembly    SpecDivision = 10000001424 // Сборка
+	Part        SpecDivision = 10000001425 // Деталь
+	AnotherSpec SpecDivision = 0
 )
 
 func DefSpecDivision(val string) SpecDivision {
@@ -23,7 +23,7 @@ func DefSpecDivision(val string) SpecDivision {
 		return res
 	}
 
-	return Another
+	return AnotherSpec
 }
 
 // Единицы измерения

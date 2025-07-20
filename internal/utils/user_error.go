@@ -10,7 +10,7 @@ type UserError struct {
 }
 
 func (e *UserError) Error() string {
-	return fmt.Sprintf("Ошибка импорта: %s", e.Message)
+	return e.Message
 }
 
 func UserErrorf(format string, a ...any) *UserError {

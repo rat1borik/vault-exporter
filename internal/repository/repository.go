@@ -11,6 +11,8 @@ type KSRepository interface {
 	CreateIzd(ctx context.Context, options *IzdCreationOptions, tx pgx.Tx) (int64, error)
 	AddToAssembly(ctx context.Context, data *AddToAssemblyRepoDTO, tx pgx.Tx) error
 	FindNm(context.Context, *FindNmDTO, pgx.Tx) (int64, error)
+	AddKdRow(context.Context, *KdRowDTO, pgx.Tx) error
+	AddMainKd(context.Context, *KdMainDTO, pgx.Tx) error
 }
 
 type ksRepository struct {

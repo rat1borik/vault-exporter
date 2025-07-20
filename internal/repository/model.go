@@ -10,7 +10,7 @@ type IzdCreationOptions struct {
 	SpecDivisionId  domain.SpecDivision // Раздел спецификации
 	UnitsId         domain.Unit         // Единица измерения
 	GroupId         domain.IzdGroup     // Группа
-	Weight          float64             // Масса
+	Weight          *float64            // Масса
 	FileMachineName string              // Файл для станка
 	MainFileName    string              // Файл основной
 }
@@ -33,4 +33,22 @@ type AddToAssemblyRepoDTO struct {
 
 type FindNmDTO struct {
 	Name string
+}
+
+type KdRowDTO struct {
+	Id       int64
+	FileName *string
+	IsPdf    bool
+	Ext      string
+	TypeKD   domain.KDType
+	Material *int64
+	Format   domain.PaperFormat
+	Name     string
+	Code     string
+}
+
+type KdMainDTO struct {
+	Id       int64
+	TypeFile domain.FileType
+	FileName *string
 }

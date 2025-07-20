@@ -5,11 +5,26 @@ import (
 	"vault-exporter/internal/domain"
 )
 
+// Модель добавления нового изделия в сборку
 type AddToAssemblyDTO struct {
 	ParentId int64
 	Id       int64
 	Quantity int
 	Position int
+}
+
+// Модель добавления КД в новое изделие
+type KDOptions struct {
+	Id           int64
+	Positions    []KDPosition
+	MaterialName *string
+	SpecDivision domain.SpecDivision
+	Name         string
+	Code         string
+}
+
+type KDPosition struct {
+	FileName string // Название файла КД
 }
 
 type VaultBuilt []*domain.VaultItem

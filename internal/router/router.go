@@ -20,7 +20,7 @@ func SetupServer(cfg *config.ServerConfig, db *pgxpool.Pool) *gin.Engine {
 	// Регистрируем все зависимости
 
 	fileGetterService := service.NewFileGetterService(cfg)
-	izdCreatorService := service.NewIzdCreatorService(cfg, ksRepo)
+	izdCreatorService := service.NewIzdCreatorService(cfg, fileGetterService, ksRepo)
 	importProcessorService := service.NewImportProcessorService(cfg, db, fileGetterService, izdCreatorService, ksRepo)
 
 	fgHandler := handler.NewLoadVaultHandler(cfg, importProcessorService)

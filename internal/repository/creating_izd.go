@@ -59,9 +59,12 @@ func fillIzdHeaderParameters(ctx context.Context, options *IzdCreationOptions, t
 	batch.Queue(`INSERT INTO orl (id_obj_own, id_prmt, id_obj_mem) 
 		VALUES ($1, $2, $3)`, id, 175486, options.UnitsId)
 
-	// Заполняем массу
-	batch.Queue(`INSERT INTO op (id_obj, id_prmt, vl, id_dct_edizm) 
-		VALUES ($1, $2, ($3)::text, $4)`, id, 175483, fmt.Sprintf("%f", options.Weight), domain.Kg)
+	if options.Weight != nil {
+		weight := strconv.FormatFloat(*options.Weight, 'f', -1, 64)
+		// Заполняем массу
+		batch.Queue(`INSERT INTO op (id_obj, id_prmt, vl, id_dct_edizm) 
+		VALUES ($1, $2, $3, $4)`, id, 175483, weight, domain.Kg)
+	}
 
 	// Заполняем вид
 	batch.Queue(`INSERT INTO OC (ID_OBJ, ID_CLS, ID_PRMT) 

@@ -69,7 +69,7 @@ func (svc importProcessorService) Import(ctx context.Context, val []domain.Vault
 
 		created[node.Id] = struct{}{}
 
-		idParent, err := svc.izdCreatorSvc.CreateIzd(ctx, node, tx)
+		idParent, err := svc.izdCreatorSvc.CreateOrFindNm(ctx, node, tx)
 		if err != nil {
 			errs.Add(err, !svc.cfg.IsProduction)
 			return nil
@@ -113,7 +113,7 @@ func (svc importProcessorService) Import(ctx context.Context, val []domain.Vault
 	createAndFill(root)
 
 	errsFinal := errs.Collection()
-	if errsFinal != nil {
+	if errsFinal == nil {
 		tx.Commit(ctx)
 	}
 	return errsFinal
