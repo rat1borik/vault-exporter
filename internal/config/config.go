@@ -11,8 +11,9 @@ import (
 
 type ServerConfig struct {
 	Server struct {
-		Host string `yaml:"host"`
-		Port int    `yaml:"port"`
+		Host   string `yaml:"host"`
+		Port   int    `yaml:"port"`
+		ApiKey string `yaml:"api_key"`
 	} `yaml:"server"`
 	Vault struct {
 		Host string `yaml:"host"`

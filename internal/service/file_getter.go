@@ -35,7 +35,6 @@ func NewFileGetterService(cfg *config.ServerConfig) FileGetterService {
 
 // Осуществляет загрузку файла из Vault в специальную директорию КС
 func (srv *fileGetterService) LoadFile(file *domain.VaultFile, ctxId string) (string, error) {
-
 	path := fmt.Sprintf("http://%s:%d/api/files?id=%d", srv.cfg.Vault.Host, srv.cfg.Vault.Port, file.Id)
 
 	resp, err := http.Get(path)

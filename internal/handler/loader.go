@@ -38,6 +38,17 @@ func (h *LoadVaultHandler) LoadVaultData(c *gin.Context) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
+	if h.cfg.Server.ApiKey != "" {
+		if token, err := getBearerToken(c); err != nil {
+			log.Printf("%v", err.Error())
+			response.ValidationError(c, []string{"Ошибка получения ключа авторизации (запрос неверен)"})
+			return
+		} else if token != h.cfg.Server.ApiKey {
+			response.ValidationError(c, []string{"Ключ авторизации неверен"})
+			return
+		}
+	}
+
 	var items []domain.VaultItem
 
 	if err := c.ShouldBindBodyWithJSON(&items); err != nil {
