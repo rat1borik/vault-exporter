@@ -4,6 +4,7 @@ package handler
 import (
 	"context"
 	"log"
+	"sync"
 	"vault-exporter/internal/config"
 	"vault-exporter/internal/domain"
 	"vault-exporter/internal/response"
@@ -17,6 +18,7 @@ import (
 type LoadVaultHandler struct {
 	importProcSvc service.ImportProcessorService
 	cfg           *config.ServerConfig
+	mu            sync.Mutex
 }
 
 func NewLoadVaultHandler(cfg *config.ServerConfig, importProcSvc service.ImportProcessorService) *LoadVaultHandler {
@@ -32,6 +34,9 @@ func (h *LoadVaultHandler) RegisterRoute(r *gin.RouterGroup) {
 
 // Загружает данные при вызове ручки из Vault
 func (h *LoadVaultHandler) LoadVaultData(c *gin.Context) {
+	// Сериализуем запросы, чтобы поддерживать консистентность файлов в КС-ной папке (пусть ждут)
+	h.mu.Lock()
+	defer h.mu.Unlock()
 
 	var items []domain.VaultItem
 

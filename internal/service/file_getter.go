@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 	"vault-exporter/internal/config"
 	"vault-exporter/internal/domain"
@@ -27,9 +26,7 @@ type FileGetterService interface {
 }
 
 type fileGetterService struct {
-	cfg        *config.ServerConfig
-	mu         sync.Mutex
-	currentCtx string
+	cfg *config.ServerConfig
 }
 
 func NewFileGetterService(cfg *config.ServerConfig) FileGetterService {
@@ -46,9 +43,6 @@ func (srv *fileGetterService) LoadFile(file *domain.VaultFile, ctxId string) (st
 		return "", fmt.Errorf("сan't perform request to vault: %w, id = %d", err, file.Id)
 	}
 	defer resp.Body.Close()
-
-	// Пишем во временное место (потом заберем)
-	utils.EnsureDir(srv.tempDirPath(ctxId))
 
 	tempName := uuid.New().String()
 	dest, err := os.Create(filepath.Join(srv.tempDirPath(ctxId), tempName))
@@ -67,12 +61,6 @@ func (srv *fileGetterService) LoadFile(file *domain.VaultFile, ctxId string) (st
 	dest.Close()
 
 	checksum := hasher.Sum(nil)
-
-	// Захватываем доступ к КС-ной папке для всего контекста
-	if srv.currentCtx != ctxId {
-		srv.mu.Lock()
-		srv.currentCtx = ctxId
-	}
 
 	filename := file.FileName
 
@@ -121,10 +109,6 @@ func (srv *fileGetterService) tempDirPath(ctxId string) string {
 
 // Чистит временнную папку в случае неудачи / после всех действий
 func (srv *fileGetterService) ClearTempFolder(ctxId string) error {
-	if ctxId == srv.currentCtx {
-		srv.currentCtx = ""
-		defer srv.mu.Unlock()
-	}
 	err := utils.ClearDir(srv.tempDirPath(ctxId), true)
 	if err != nil {
 		return fmt.Errorf("can't clear temp dir: %w", err)
@@ -135,16 +119,6 @@ func (srv *fileGetterService) ClearTempFolder(ctxId string) error {
 
 // Заливает файлы в финальную папку КС
 func (srv *fileGetterService) CommitFiles(ctxId string) error {
-	// Захватываем доступ к КС-ной папке для всего контекста
-	if srv.currentCtx != ctxId {
-		return fmt.Errorf("can't commit not current context")
-	}
-
-	defer func() {
-		srv.currentCtx = ""
-		srv.mu.Unlock()
-	}()
-
 	entries, err := os.ReadDir(srv.tempDirPath(ctxId))
 	if err != nil {
 		return fmt.Errorf("can't commit files: %w", err)
