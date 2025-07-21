@@ -89,3 +89,18 @@ func CopyFile(srcPath, dstPath string, removeOriginal bool) error {
 
 	return nil
 }
+
+func ExecPath(path string) (string, error) {
+	if filepath.IsAbs(path) {
+		return path, nil
+	}
+
+	ExecPath, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+
+	execDir, _ := filepath.Split(ExecPath)
+
+	return filepath.Join(execDir, path), nil
+}

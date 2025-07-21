@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"vault-exporter/internal/config"
 	"vault-exporter/internal/infrastructure"
 	"vault-exporter/internal/router"
+	"vault-exporter/internal/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -48,19 +50,46 @@ func (p *program) Start(s svc.Service) error {
 
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 
-	p.server = &http.Server{
-		Addr:    addr,
-		Handler: r,
-	}
+	if cfg.Server.TLS {
+		pathCert, _ := utils.ExecPath(cfg.Server.CertPath)
+		pathKey, _ := utils.ExecPath(cfg.Server.KeyPath)
 
-	log.Printf("HTTP server on %s", addr)
-
-	// Запуск в отдельной горутине
-	go func() {
-		if err := p.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			panic(err)
+		cert, err := tls.LoadX509KeyPair(pathCert, pathKey)
+		if err != nil {
+			log.Fatalf("failed to load cert/key: %v", err)
 		}
-	}()
+
+		p.server = &http.Server{
+			Addr:      addr,
+			Handler:   r,
+			TLSConfig: &tls.Config{Certificates: []tls.Certificate{cert}},
+		}
+
+		log.Printf("HTTPS server on %s", addr)
+
+		// Запуск в отдельной горутине
+		go func() {
+			if err := p.server.ListenAndServeTLS("", ""); err != nil && err != http.ErrServerClosed {
+				log.Fatalf("server error: %v", err)
+			}
+		}()
+
+	} else {
+
+		p.server = &http.Server{
+			Addr:    addr,
+			Handler: r,
+		}
+
+		log.Printf("HTTP server on %s", addr)
+
+		// Запуск в отдельной горутине
+		go func() {
+			if err := p.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				log.Fatalf("server error: %v", err)
+			}
+		}()
+	}
 
 	return nil
 }

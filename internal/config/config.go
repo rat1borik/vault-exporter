@@ -4,16 +4,19 @@ package config
 import (
 	"log"
 	"os"
-	"path/filepath"
+	"vault-exporter/internal/utils"
 
 	"gopkg.in/yaml.v3"
 )
 
 type ServerConfig struct {
 	Server struct {
-		Host   string `yaml:"host"`
-		Port   int    `yaml:"port"`
-		ApiKey string `yaml:"api_key"`
+		Host     string `yaml:"host"`
+		Port     int    `yaml:"port"`
+		ApiKey   string `yaml:"api_key"`
+		TLS      bool   `yaml:"tls"`
+		CertPath string `yaml:"cert_path"`
+		KeyPath  string `yaml:"key_path"`
 	} `yaml:"server"`
 	Vault struct {
 		Host string `yaml:"host"`
@@ -33,14 +36,12 @@ type ServerConfig struct {
 }
 
 func LoadConfig(filename string) (*ServerConfig, error) {
-	ExecPath, err := os.Executable()
+	path, err := utils.ExecPath(filename)
 	if err != nil {
-		log.Fatalln(err.Error())
+		log.Fatalf("can't load config: %v", path)
 	}
 
-	execDir, _ := filepath.Split(ExecPath)
-
-	data, err := os.ReadFile(filepath.Join(execDir, filename))
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
