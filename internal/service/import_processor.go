@@ -114,7 +114,12 @@ func (svc importProcessorService) Import(ctx context.Context, val []domain.Vault
 
 	errsFinal := errs.Collection()
 	if errsFinal == nil {
-		tx.Commit(ctx)
+		if err := tx.Commit(ctx); err != nil {
+			svc.fileGetterSvc.ClearTempFolder(ctx.Value(utils.CtxProcId).(string))
+			return []error{err}
+		}
+		svc.fileGetterSvc.CommitFiles(ctx.Value(utils.CtxProcId).(string))
 	}
+	svc.fileGetterSvc.ClearTempFolder(ctx.Value(utils.CtxProcId).(string))
 	return errsFinal
 }

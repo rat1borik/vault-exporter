@@ -2,7 +2,6 @@
 package router
 
 import (
-	"net/http"
 	"vault-exporter/internal/config"
 	"vault-exporter/internal/handler"
 	"vault-exporter/internal/repository"
@@ -28,9 +27,6 @@ func SetupServer(cfg *config.ServerConfig, db *pgxpool.Pool) *gin.Engine {
 	api := r.Group("/api")
 	{
 		fgHandler.RegisterRoute(api)
-		api.GET("/", func(c *gin.Context) {
-			c.JSON(http.StatusOK, gin.H{"message": "Hello world"})
-		})
 	}
 
 	return r

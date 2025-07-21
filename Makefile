@@ -23,6 +23,10 @@ clean:
 run:
 	go run $(MAIN_PACKAGE)
 
+# Запускаем приложение (для разработки)
+run-race:
+	go run -race $(MAIN_PACKAGE)
+
 # Форматируем код
 fmt:
 	go fmt ./...

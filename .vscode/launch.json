@@ -10,7 +10,10 @@
             "request": "launch",
             "mode": "auto",
             "program": "./cmd/server/",
-            "output": "./build/debug.exe"
+            "output": "./build/debug.exe",
+            "buildFlags": [
+                "-race"
+            ]
         }
     ]
 }

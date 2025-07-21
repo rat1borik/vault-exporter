@@ -56,7 +56,7 @@ func (svc *izdCreatorService) CreateOrFindNm(ctx context.Context, item *domain.V
 		wgFiles.Add(1)
 		go func() {
 			defer wgFiles.Done()
-			newFile, err := svc.fileGetterSvc.LoadFile(&item.Files[i], ctx.Value("proc_id").(string))
+			newFile, err := svc.fileGetterSvc.LoadFile(&item.Files[i], ctx.Value(utils.CtxProcId).(string))
 			if err != nil && fileError == nil {
 				fileError = err
 			}
@@ -225,14 +225,4 @@ func (svc *izdCreatorService) AddKD(ctx context.Context, data *KDOptions, tx pgx
 	}
 
 	return nil
-}
-
-func filesToKDPositions(val []domain.VaultFile) []KDPosition {
-	res := make([]KDPosition, 0, len(val))
-
-	for i := range val {
-		res = append(res, KDPosition{FileName: val[i].FileName})
-	}
-
-	return res
 }

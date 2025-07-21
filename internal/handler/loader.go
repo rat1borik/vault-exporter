@@ -2,13 +2,16 @@
 package handler
 
 import (
+	"context"
 	"log"
 	"vault-exporter/internal/config"
 	"vault-exporter/internal/domain"
 	"vault-exporter/internal/response"
 	"vault-exporter/internal/service"
+	"vault-exporter/internal/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type LoadVaultHandler struct {
@@ -38,7 +41,11 @@ func (h *LoadVaultHandler) LoadVaultData(c *gin.Context) {
 		return
 	}
 
-	if err := h.importProcSvc.Import(c, items); err != nil {
+	procId := uuid.New()
+
+	procCtx := context.WithValue(c, utils.CtxProcId, procId.String())
+
+	if err := h.importProcSvc.Import(procCtx, items); err != nil {
 		msgs := make([]string, 0, len(err))
 		for i := range err {
 			msgs = append(msgs, err[i].Error())
