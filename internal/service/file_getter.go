@@ -45,6 +45,11 @@ func (srv *fileGetterService) LoadFile(file *domain.VaultFile, ctxId string) (st
 	defer resp.Body.Close()
 
 	tempName := uuid.New().String()
+
+	if err := utils.EnsureDir(srv.tempDirPath(ctxId)); err != nil {
+		return "", fmt.Errorf("сan't prepare folder: %w, id = %d", err, file.Id)
+	}
+
 	dest, err := os.Create(filepath.Join(srv.tempDirPath(ctxId), tempName))
 	if err != nil {
 		return "", fmt.Errorf("сan't create file: %w, id = %d", err, file.Id)

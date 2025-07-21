@@ -10,6 +10,14 @@
             "request": "launch",
             "mode": "auto",
             "program": "./cmd/server/",
+            "output": "./build/debug.exe"
+        },
+        {
+            "name": "Launch Package Race",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "./cmd/server/",
             "output": "./build/debug.exe",
             "buildFlags": [
                 "-race"
