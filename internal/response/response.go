@@ -7,15 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ServerError(c *gin.Context, messages []string) {
-	c.JSON(http.StatusInternalServerError, gin.H{
-		"success": false,
-		"errors":  messages,
-	})
-}
-
-func ValidationError(c *gin.Context, messages []string) {
-	c.JSON(http.StatusBadRequest, gin.H{
+func Error(c *gin.Context, messages []string) {
+	c.JSON(http.StatusOK, gin.H{
 		"success": false,
 		"errors":  messages,
 	})

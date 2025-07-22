@@ -2,7 +2,9 @@
 package handler
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"log"
 	"sync"
 	"vault-exporter/internal/config"
@@ -41,19 +43,33 @@ func (h *LoadVaultHandler) LoadVaultData(c *gin.Context) {
 	if h.cfg.Server.ApiKey != "" {
 		if token, err := getBearerToken(c); err != nil {
 			log.Printf("%v", err.Error())
-			response.ValidationError(c, []string{"Ошибка получения ключа авторизации (запрос неверен)"})
+			response.Error(c, []string{"Ошибка получения ключа авторизации (запрос неверен)"})
 			return
 		} else if token != h.cfg.Server.ApiKey {
-			response.ValidationError(c, []string{"Ключ авторизации неверен"})
+			response.Error(c, []string{"Ключ авторизации неверен"})
 			return
 		}
 	}
 
 	var items []domain.VaultItem
 
+	if !h.cfg.IsProduction {
+		bodyBytes, err := io.ReadAll(c.Request.Body)
+		if err != nil {
+			c.JSON(400, gin.H{"error": "can't read body"})
+			return
+		}
+
+		// Логируем тело
+		log.Printf("Request body: %s\n", string(bodyBytes))
+
+		// Восстанавливаем тело обратно в c.Request.Body
+		c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+	}
+
 	if err := c.ShouldBindBodyWithJSON(&items); err != nil {
 		log.Printf("%v", err.Error())
-		response.ValidationError(c, []string{"Ошибка при обработке входных данных"})
+		response.Error(c, []string{"Ошибка при обработке входных данных"})
 		return
 	}
 
@@ -64,9 +80,10 @@ func (h *LoadVaultHandler) LoadVaultData(c *gin.Context) {
 	if err := h.importProcSvc.Import(procCtx, items); err != nil {
 		msgs := make([]string, 0, len(err))
 		for i := range err {
+			log.Printf("%v", err[i].Error())
 			msgs = append(msgs, err[i].Error())
 		}
-		response.ServerError(c, msgs)
+		response.Error(c, msgs)
 		return
 	}
 

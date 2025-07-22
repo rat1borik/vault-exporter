@@ -4,6 +4,7 @@ package router
 import (
 	"vault-exporter/internal/config"
 	"vault-exporter/internal/handler"
+	"vault-exporter/internal/logger"
 	"vault-exporter/internal/repository"
 	"vault-exporter/internal/service"
 
@@ -11,8 +12,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func SetupServer(cfg *config.ServerConfig, db *pgxpool.Pool) *gin.Engine {
-	r := gin.Default()
+func SetupServer(cfg *config.ServerConfig, db *pgxpool.Pool, logger logger.Logger) *gin.Engine {
+	r := gin.New()
+	r.Use(gin.LoggerWithWriter(logger.Writer()))
+	r.Use(gin.Recovery())
 
 	ksRepo := repository.NewKSRepository(db)
 

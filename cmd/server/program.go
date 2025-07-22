@@ -9,6 +9,7 @@ import (
 	"time"
 	"vault-exporter/internal/config"
 	"vault-exporter/internal/infrastructure"
+	"vault-exporter/internal/logger"
 	"vault-exporter/internal/router"
 	"vault-exporter/internal/utils"
 
@@ -20,6 +21,7 @@ import (
 
 type program struct {
 	server *http.Server
+	logger logger.Logger
 	isProd bool
 	db     *pgxpool.Pool
 }
@@ -46,7 +48,7 @@ func (p *program) Start(s svc.Service) error {
 		log.Println("Starting in development mode")
 
 	}
-	r := router.SetupServer(cfg, p.db)
+	r := router.SetupServer(cfg, p.db, p.logger)
 
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 

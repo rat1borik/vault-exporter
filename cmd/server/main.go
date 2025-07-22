@@ -4,6 +4,7 @@ package main
 import (
 	"log"
 	"os"
+	"vault-exporter/internal/logger"
 
 	"github.com/kardianos/service"
 )
@@ -11,13 +12,19 @@ import (
 var AppEnv string
 
 func main() {
+	logger := logger.NewLogrusLogger()
+
+	// Установка вывода стандартного log в logrus
+	log.SetOutput(logger.Writer())
+	log.SetFlags(0) // убираем timestamp, так как logrus добавит свой
+
 	svcConfig := &service.Config{
 		Name:        "VaultExporterService",
 		DisplayName: "Vault Exporter Service",
 		Description: "A tool for exporting data from Vault to KS",
 	}
 
-	prg := &program{isProd: AppEnv == "production"}
+	prg := &program{isProd: AppEnv == "production", logger: logger}
 	s, err := service.New(prg, svcConfig)
 	if err != nil {
 		log.Fatal(err)
