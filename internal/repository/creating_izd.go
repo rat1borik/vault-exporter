@@ -38,7 +38,7 @@ func (repo *ksRepository) CreateIzd(ctx context.Context, options *IzdCreationOpt
 		return 0, creationError("filling header", options.Code, err)
 	}
 
-	if err := createObjectManagement(ctx, tx, newIzdId, 175723, 1, "Загружено автоматически из Autodesk Vault"); err != nil {
+	if err := createObjectManagement(ctx, tx, newIzdId, 175723); err != nil {
 		return 0, creationError("creating object management", options.Code, err)
 	}
 
@@ -77,7 +77,7 @@ func fillIzdHeaderParameters(ctx context.Context, options *IzdCreationOptions, t
 	return nil
 }
 
-func createObjectManagement(ctx context.Context, tx pgx.Tx, id int64, shellPrmt int64, stage int, description string) error {
+func createObjectManagement(ctx context.Context, tx pgx.Tx, id int64, shellPrmt int64) error {
 	// shell
 	res, err := tx.Query(ctx, "INSERT INTO SHELL (code, id_prmt) VALUES ($1, $2) RETURNING id_shell", "-", shellPrmt)
 	if err != nil {
@@ -94,17 +94,22 @@ func createObjectManagement(ctx context.Context, tx pgx.Tx, id int64, shellPrmt 
 	}
 	res.Close()
 
-	// shell_move
-	_, err = tx.Exec(ctx, `INSERT INTO SHELL_MOVE (ID_OBJ_STTS, D1, ID_PRSN, ID_SHELL, REASON_RET)
-  					          values ($1, current_timestamp, $2, $3, $4)`, stage, IdRazrab, idShell, description)
-	if err != nil {
-		return fmt.Errorf("can't create object management: %w", err)
-	}
+	batch := infrastructure.NewCountingBatch()
 
+	// shell_move
+	batch.Queue(`INSERT INTO SHELL_MOVE (ID_OBJ_STTS, D1, ID_PRSN, ID_SHELL, REASON_RET)
+  					          values ($1, current_timestamp, $2, $3, $4)`, 1, IdRazrab, idShell, "Загружено автоматически из Autodesk Vault")
+
+	batch.Queue(`INSERT INTO SHELL_MOVE (ID_OBJ_STTS, D1, ID_PRSN, ID_SHELL)
+  					          values ($1, current_timestamp, $2, $3)`, 2, IdRazrab, idShell)
+
+	batch.Queue(`INSERT INTO SHELL_MOVE (ID_OBJ_STTS, D1, ID_PRSN, ID_SHELL)
+  					          values ($1, current_timestamp, $2, $3)`, 26, IdRazrab, idShell)
 	// shell_object
-	_, err = tx.Exec(ctx, "INSERT INTO SHELL_OBJECT (id_obj, id_shell) VALUES ($1, $2)", id, idShell)
-	if err != nil {
-		return fmt.Errorf("can't create object management: %w", err)
+	batch.Queue("INSERT INTO SHELL_OBJECT (id_obj, id_shell) VALUES ($1, $2)", id, idShell)
+
+	if err := batch.ExecTx(ctx, tx); err != nil {
+		return fmt.Errorf("can't fill parameters: %w", err)
 	}
 
 	return nil
