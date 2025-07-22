@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"vault-exporter/internal/utils"
 
 	"github.com/sirupsen/logrus"
@@ -23,9 +24,12 @@ type LogrusLogger struct {
 	entry *logrus.Entry
 }
 
-func NewLogrusLogger() *LogrusLogger {
+func NewLogrusLogger(path string) *LogrusLogger {
 
-	path, _ := utils.ExecPath("logs/app.log")
+	if path == "" {
+		path, _ = utils.ExecPath("logs/vault-agent.log")
+	}
+
 	// Настройка ротации логов
 	logFile := &lumberjack.Logger{
 		Filename:   path, // лог будет автоматически ротироваться
@@ -37,8 +41,8 @@ func NewLogrusLogger() *LogrusLogger {
 
 	log := logrus.New()
 	log.SetFormatter(&CustomFormatter{})
-
-	multiWriter := io.MultiWriter(os.Stdout, logFile)
+	file, _ := os.OpenFile(filepath.Join(path, "1.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	multiWriter := io.MultiWriter(logFile, file, os.Stdout) // stdout в конце, чтобы не валил всю цепочку, когда служба
 	log.SetOutput(multiWriter)
 
 	return &LogrusLogger{entry: logrus.NewEntry(log)}

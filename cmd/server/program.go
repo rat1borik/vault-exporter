@@ -22,39 +22,32 @@ import (
 type program struct {
 	server *http.Server
 	logger logger.Logger
-	isProd bool
+	cfg    *config.ServerConfig
 	db     *pgxpool.Pool
 }
 
 func (p *program) Start(s svc.Service) error {
 
-	// Загрузка конфигурации
-	cfg, err := config.LoadConfig("config.yaml")
-	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
-		return err
-	}
-
-	if pool, err := runDb(cfg); err != nil {
+	if pool, err := runDb(p.cfg); err != nil {
 		log.Fatal(err)
 		return err
 	} else {
 		p.db = pool
 	}
 
-	if p.isProd {
+	if p.cfg.IsProduction {
 		gin.SetMode(gin.ReleaseMode)
 	} else {
 		log.Println("Starting in development mode")
 
 	}
-	r := router.SetupServer(cfg, p.db, p.logger)
+	r := router.SetupServer(p.cfg, p.db, p.logger)
 
-	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
+	addr := fmt.Sprintf("%s:%d", p.cfg.Server.Host, p.cfg.Server.Port)
 
-	if cfg.Server.TLS {
-		pathCert, _ := utils.ExecPath(cfg.Server.CertPath)
-		pathKey, _ := utils.ExecPath(cfg.Server.KeyPath)
+	if p.cfg.Server.TLS {
+		pathCert, _ := utils.ExecPath(p.cfg.Server.CertPath)
+		pathKey, _ := utils.ExecPath(p.cfg.Server.KeyPath)
 
 		cert, err := tls.LoadX509KeyPair(pathCert, pathKey)
 		if err != nil {

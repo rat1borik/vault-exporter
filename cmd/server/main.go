@@ -4,6 +4,7 @@ package main
 import (
 	"log"
 	"os"
+	"vault-exporter/internal/config"
 	"vault-exporter/internal/logger"
 
 	"github.com/kardianos/service"
@@ -12,7 +13,15 @@ import (
 var AppEnv string
 
 func main() {
-	logger := logger.NewLogrusLogger()
+
+	// Загрузка конфигурации
+	cfg, err := config.LoadConfig("config.yaml")
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+
+	}
+	cfg.IsProduction = AppEnv == "production"
+	logger := logger.NewLogrusLogger(cfg.LogPath)
 
 	// Установка вывода стандартного log в logrus
 	log.SetOutput(logger.Writer())
@@ -24,7 +33,7 @@ func main() {
 		Description: "A tool for exporting data from Vault to KS",
 	}
 
-	prg := &program{isProd: AppEnv == "production", logger: logger}
+	prg := &program{logger: logger, cfg: cfg}
 	s, err := service.New(prg, svcConfig)
 	if err != nil {
 		log.Fatal(err)

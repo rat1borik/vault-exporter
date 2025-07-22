@@ -16,3 +16,4 @@ ks_database:
   user: "postgres"
   name: "TPS"
   password: "pass"
+log_path: "c:/logs"

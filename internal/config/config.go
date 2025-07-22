@@ -31,6 +31,7 @@ type ServerConfig struct {
 		Name     string `yaml:"name"`
 		Password string `yaml:"password"`
 	} `yaml:"ks_database"`
+	LogPath string `yaml:"log_path"`
 	// Берется из env
 	IsProduction bool
 }

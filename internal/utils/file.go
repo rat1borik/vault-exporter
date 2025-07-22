@@ -4,6 +4,7 @@ package utils
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -97,10 +98,11 @@ func ExecPath(path string) (string, error) {
 
 	ExecPath, err := os.Executable()
 	if err != nil {
-		return "", err
+		log.Fatal("can't determine exec path")
+		return "", nil
 	}
 
-	execDir, _ := filepath.Split(ExecPath)
+	execDir := filepath.Dir(ExecPath)
 
 	return filepath.Join(execDir, path), nil
 }
