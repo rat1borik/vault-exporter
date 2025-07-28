@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"vault-exporter/internal/utils"
 
 	"github.com/sirupsen/logrus"
@@ -41,8 +40,8 @@ func NewLogrusLogger(path string) *LogrusLogger {
 
 	log := logrus.New()
 	log.SetFormatter(&CustomFormatter{})
-	file, _ := os.OpenFile(filepath.Join(path, "1.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	multiWriter := io.MultiWriter(logFile, file, os.Stdout) // stdout в конце, чтобы не валил всю цепочку, когда служба
+
+	multiWriter := io.MultiWriter(logFile, os.Stdout) // stdout в конце, чтобы не валил всю цепочку, когда служба
 	log.SetOutput(multiWriter)
 
 	return &LogrusLogger{entry: logrus.NewEntry(log)}
