@@ -52,10 +52,16 @@ func (svc *izdCreatorService) CreateOrFindNm(ctx context.Context, item *domain.V
 	wgFiles := sync.WaitGroup{}
 	files := utils.NewSafeSlice[KDPosition]()
 
+	sema := utils.NewSemaphore(10)
+
 	for i := range item.Files {
 		wgFiles.Add(1)
 		go func() {
 			defer wgFiles.Done()
+
+			sema.Acquire()
+			defer sema.Release()
+
 			newFile, err := svc.fileGetterSvc.LoadFile(&item.Files[i], ctx.Value(utils.CtxProcId).(string))
 			if err != nil && fileError == nil {
 				fileError = err

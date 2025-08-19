@@ -34,6 +34,12 @@ func (repo *ksRepository) CreateIzd(ctx context.Context, options *IzdCreationOpt
 	}
 	res.Close()
 
+	// Проставляем системный код
+	_, err = tx.Exec(ctx, `UPDATE o SET acronym = pobj.get_code($1, 13037903) WHERE id_obj = $1`, newIzdId)
+	if err != nil {
+		return 0, creationError("filling acronym", options.Code, err)
+	}
+
 	if err := fillIzdHeaderParameters(ctx, options, tx, newIzdId); err != nil {
 		return 0, creationError("filling header", options.Code, err)
 	}
